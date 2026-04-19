@@ -9,7 +9,7 @@ st.title("🔎 חיפוש חכם בכתבי יד (Gemini AI)")
 # חיבור ל-API של Gemini
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-3.1-pro-preview')
 else:
     st.error("יש להגדיר את המפתח ב-Secrets")
     st.stop()
