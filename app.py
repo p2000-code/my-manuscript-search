@@ -17,7 +17,7 @@ else:
 @st.cache_data
 def get_catalog_text():
     # קריאת הקטלוג והפיכתו לטקסט אחד ארוך שה-AI יכול לקרוא
-    df = pd.read_csv("catalog_hasidut_final.csv")
+    df = pd.read_csv("catalog.csv")
     # אנחנו שולחים רק את העמודות החשובות כדי לחסוך מקום
     relevant_cols = ['מספר כתב יד', 'מדור ומדף', 'תיאור הכתב יד']
     return df[relevant_cols].to_csv(index=False)
