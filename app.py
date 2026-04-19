@@ -1,62 +1,47 @@
 import streamlit as st
 import pandas as pd
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
+import google.generativeai as genai
 
-# הגדרת כותרת דף ועיצוב בסיסי
-st.set_page_config(page_title="חיפוש סמנטי בקטלוג כתבי יד", layout="wide")
+# הגדרות עיצוב
+st.set_page_config(page_title="חיפוש חכם בקטלוג", layout="wide")
+st.title("🔎 חיפוש חכם בכתבי יד (Gemini AI)")
 
-st.title("🔎 מערכת חיפוש AI בקטלוג כתבי יד")
-st.markdown("חיפוש חכם המבין את תוכן הכתבים (מבוסס משמעות ולא רק מילים מדויקות)")
+# חיבור ל-API של Gemini
+if "GEMINI_API_KEY" in st.secrets:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    st.error("יש להגדיר את המפתח ב-Secrets")
+    st.stop()
 
-# פונקציה לטעינת הנתונים (עם מטמון)
 @st.cache_data
-def load_data():
-    # שם הקובץ כפי שהוגדר בפרויקט
-    df = pd.read_csv("catalog.csv")
-    df['תיאור הכתב יד'] = df['תיאור הכתב יד'].fillna("")
-    return df
+def get_catalog_text():
+    # קריאת הקטלוג והפיכתו לטקסט אחד ארוך שה-AI יכול לקרוא
+    df = pd.read_csv("catalog_hasidut_final.csv")
+    # אנחנו שולחים רק את העמודות החשובות כדי לחסוך מקום
+    relevant_cols = ['מספר כתב יד', 'מדור ומדף', 'תיאור הכתב יד']
+    return df[relevant_cols].to_csv(index=False)
 
-# פונקציה לטעינת המודל (עם מטמון)
-@st.cache_resource
-def load_model():
-    return SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+catalog_data = get_catalog_text()
 
-# פונקציה ליצירת ווקטורים (Embeddings) - מתבצע פעם אחת בלבד
-@st.cache_data
-def get_embeddings(_model, data_list):
-    return _model.encode(data_list, show_progress_bar=True)
-
-# הרצת הטעינה
-with st.spinner("טוען נתונים ומודל בינה מלאכותית..."):
-    df = load_data()
-    model = load_model()
-    embeddings = get_embeddings(model, df['תיאור הכתב יד'].tolist())
-
-# ממשק המשתמש בצד (Sidebar)
-st.sidebar.header("הגדרות חיפוש")
-top_k = st.sidebar.slider("מספר תוצאות להצגה", 1, 10, 5)
-
-# תיבת החיפוש המרכזית
-query = st.text_input("מה ברצונך לחפש? (למשל: 'דרושים מהריי\"צ באידיש', 'כוונות התפילה')", "")
+query = st.text_input("שאל את ה-AI על הקטלוג (למשל: 'אילו פנקסים של אדמו''ר הזקן קיימים?'):")
 
 if query:
-    # ביצוע החיפוש
-    query_vector = model.encode([query])
-    similarities = cosine_similarity(query_vector, embeddings)[0]
-    top_indices = np.argsort(similarities)[::-1][:top_k]
-
-    st.subheader(f"תוצאות עבור: '{query}'")
+    prompt = f"""
+    אתה ספרן ומומחה ביבליוגרפי לחסידות חב"ד. 
+    להלן קטלוג כתבי יד מלא:
     
-    for i in top_indices:
-        if similarities[i] > 0.2: # סינון תוצאות שאינן קשורות כלל
-            with st.expander(f"כתב יד מס' {df.iloc[i]['מספר כתב יד']} (התאמה: {similarities[i]:.2f})"):
-                st.write(f"**תיאור:** {df.iloc[i]['תיאור הכתב יד']}")
-                if 'מספר עמודים' in df.columns:
-                    st.write(f"**עמודים:** {df.iloc[i]['מספר עמודים']}")
-        else:
-            st.info("לא נמצאו תוצאות נוספות ברמת התאמה גבוהה.")
-            break
-else:
-    st.write("הזן מילת חיפוש כדי להתחיל.")
+    {catalog_data}
+    
+    בהתבסס אך ורק על הקטלוג לעיל, ענה על השאלה הבאה: "{query}"
+    אם מצאת פריטים רלוונטיים, פרט את המספר שלהם ואת התיאור בקצרה. 
+    אם יש מושגים חסידיים או ראשי תיבות, השתמש בידע שלך כדי לפרש אותם נכון מתוך ההקשר.
+    """
+    
+    with st.spinner("ה-AI החכם סורק את כל הקטלוג..."):
+        try:
+            response = model.generate_content(prompt)
+            st.markdown("### תשובת המערכת:")
+            st.write(response.text)
+        except Exception as e:
+            st.error(f"שגיאה בתקשורת עם ה-AI: {e}")
