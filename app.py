@@ -16,7 +16,7 @@ else:
     st.stop()
 
 # שימוש במודל Flash - חכם מספיק לבלשנות, חינמי בנפחים האלה, וסופר מהיר
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # 2. טעינת הנתונים מהקטלוג (קורה פעם אחת כשהאתר עולה)
 @st.cache_data
