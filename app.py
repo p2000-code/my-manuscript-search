@@ -63,7 +63,7 @@ if query:
             
             # 4. מנוע החיפוש המקומי: משלב דיוק וסלחנות (Fuzzy Search)
             def check_match(row):
-                row_text = " ".join(row.values)
+                row_text = " ".join([str(val) for val in row.values])
                 
                 for term in search_terms:
                     if len(term) > 2: 
