@@ -49,15 +49,24 @@ def get_expanded_terms(query_text):
     return response.text.strip()
 # ===============================================
 
-query = st.text_input("מה תרצה לחפש בקטלוג? (למשל: סטרשלה, מאמרים לפסח, אדה\"ז):")
+# --- החלף את השורות האלו ---
+# query = st.text_input("מה תרצה לחפש בקטלוג? (למשל: סטרשלה, מאמרים לפסח, אדה\"ז):")
+# if query:
+# ---------------------------
 
-if query:
+# --- והכנס את הקוד הזה במקומן ---
+with st.form("search_form"):
+    query = st.text_input("מה תרצה לחפש בקטלוג? (למשל: סטרשלה, מאמרים לפסח, אדה\"ז):")
+    submit_button = st.form_submit_button("חפש 🔍")
+
+# עכשיו הקוד ירוץ *רק* אם המשתמש לחץ על הכפתור ויש טקסט בתיבה
+if submit_button and query:
+# --------------------------------
     with st.spinner("מפענח את הבקשה, מחפש מילים נרדפות והטיות ביידיש..."):
         try:
-            # קורא לפונקציה החכמה עם הזיכרון
+            # (מכאן הקוד ממשיך בדיוק כפי שהיה - קריאה לפונקציה, חיפוש, והצגת התוצאות)
             expanded_query = get_expanded_terms(query)
-            st.info(f"**מילות מפתח שנוספו לחיפוש ע\"י ה-AI:** {expanded_query}")
-            
+            st.info(f"**מילות מפתח שנוספו לחיפוש ע\"י ה-AI:** {expanded_query}")            
             # מנקים את המילים ממרכאות ומרווחים מיותרים
             search_terms = [term.strip().replace('"', '').replace("'", "") for term in expanded_query.split(',')]
             
